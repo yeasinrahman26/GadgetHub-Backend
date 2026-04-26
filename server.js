@@ -22,13 +22,26 @@ connectDB();
 
 const app = express();
 
-// Middleware
+// CORS configuration
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:3000"].filter(
+  Boolean,
+);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -36,6 +49,23 @@ app.use(cookieParser());
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
+// Health check
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "GadgetHub API is running 🚀",
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "GadgetHub API is running 🚀",
+  });
+});
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -45,22 +75,19 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/users", userRoutes);
 
-// Health check
-app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    status: "success",
-    message: "GadgetHub API is running 🚀",
-  });
-});
-
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+// Only listen in development — Vercel handles this in production
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(
+      `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`,
+    );
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(
-    `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`,
-  );
-});
+// IMPORTANT: Export for Vercel
+export default app;
