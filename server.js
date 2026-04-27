@@ -31,16 +31,13 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(null, true); // Allow all in production for now
+      return callback(null, true);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-
-// Handle preflight requests explicitly
-app.options("*", cors());
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -50,7 +47,7 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// Connect to DB before handling routes (middleware)
+// Connect to DB before handling routes
 app.use(async (req, res, next) => {
   try {
     await connectDB();

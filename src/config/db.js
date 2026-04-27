@@ -10,14 +10,13 @@ if (!cached) {
 
 const connectDB = async () => {
   if (cached.conn) {
-    console.log("✅ MongoDB already connected (cached)");
     return cached.conn;
   }
 
   if (!cached.promise) {
     cached.promise = mongoose
       .connect(MONGODB_URI, {
-        dbName: "GadgetHub",
+        dbName: "gadgethub",
         bufferCommands: false,
       })
       .then((mongoose) => {
