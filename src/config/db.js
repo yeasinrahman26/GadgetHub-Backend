@@ -1,24 +1,38 @@
 import mongoose from "mongoose";
 
-let isConnected = false;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 const connectDB = async () => {
-  if (isConnected) {
-    console.log("✅ MongoDB already connected");
-    return;
+  if (cached.conn) {
+    console.log("✅ MongoDB already connected (cached)");
+    return cached.conn;
   }
 
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: "GadgetHub",
-    });
-
-    isConnected = true;
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    process.exit(1);
+  if (!cached.promise) {
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        dbName: "GadgetHub",
+        bufferCommands: false,
+      })
+      .then((mongoose) => {
+        console.log(`✅ MongoDB Connected: ${mongoose.connection.host}`);
+        return mongoose;
+      })
+      .catch((error) => {
+        cached.promise = null;
+        console.error(`❌ MongoDB Connection Error: ${error.message}`);
+        throw error;
+      });
   }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
 };
 
 export default connectDB;
