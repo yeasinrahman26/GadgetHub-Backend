@@ -16,7 +16,7 @@ const connectDB = async () => {
   if (!cached.promise) {
     cached.promise = mongoose
       .connect(MONGODB_URI, {
-        dbName: "gadgethub",
+        dbName: "GadgetHub",
         bufferCommands: false,
       })
       .then((mongoose) => {
